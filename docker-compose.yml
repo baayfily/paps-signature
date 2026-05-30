@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  paps-signature:
+    build: .
+    container_name: paps-signature-app
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      # Important : monter le fichier CSV pour conserver vos modifications d'administration sur le disque hôte
+      - ./public/countries.csv:/app/public/countries.csv
