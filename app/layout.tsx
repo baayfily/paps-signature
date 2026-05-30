@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "PAPS — Générateur de signature email",
   description: "Générez votre signature email PAPS pour Gmail en quelques secondes.",
   icons: {
-    icon: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTVlHHlYNF-T78YsSMro0lgxpqRTOnmO8Tmw&s",
+    icon: "/favicon.jpg",
   },
 };
 

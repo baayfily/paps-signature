@@ -6,10 +6,23 @@ export interface SignatureData {
   email: string;
   linkLabel: string;
   linkUrl: string;
+  countryId?: string;
+  // Pays et campagnes
+  websiteUrl?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  activeSocials?: string[];
+  linkedinUrl?: string;
+  xUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
+  bannerUrl?: string;
+  bannerLink?: string;
 }
 
-const LOGO_URL =
-  'https://ci3.googleusercontent.com/mail-sig/AIorK4wgvGg5d5rVCXusXC2gfB485CKHWHMSvhIrZ_RvOvUtp96wynKcyjsT7BrD5DnAeHmaE3TGrDvbV1NP';
 const SITE_URL = 'https://papslogistics.com';
 const FONT = "'Montserrat', Arial, sans-serif";
 const NAVY = '#272F59';
@@ -17,13 +30,13 @@ const STEEL = '#399EBF';
 
 // Icônes via Iconify API (CDN public, gratuit, PNG/SVG avec paramètre couleur)
 // LinkedIn ne fonctionnait pas via cdn.simpleicons.org — on utilise Iconify pour toute la cohérence
-const SOCIAL = [
-  { name: 'LinkedIn',  url: 'https://www.linkedin.com/company/paps',  imgSrc: 'https://api.iconify.design/simple-icons:linkedin.svg?color=white' },
-  { name: 'X',         url: 'https://x.com/papslogistics',             imgSrc: 'https://cdn.simpleicons.org/x/ffffff' },
-  { name: 'Facebook',  url: 'https://www.facebook.com/Papsapp/',       imgSrc: 'https://cdn.simpleicons.org/facebook/ffffff' },
-  { name: 'Instagram', url: 'https://www.instagram.com/paps_sn',       imgSrc: 'https://cdn.simpleicons.org/instagram/ffffff' },
-  { name: 'TikTok',    url: 'https://www.tiktok.com/@papslogistics',   imgSrc: 'https://cdn.simpleicons.org/tiktok/ffffff' },
-  { name: 'YouTube',   url: 'https://www.youtube.com/@papsapp',        imgSrc: 'https://cdn.simpleicons.org/youtube/ffffff' },
+const SOCIAL_TEMPLATES = [
+  { name: 'LinkedIn',  imgSrc: 'https://api.iconify.design/simple-icons:linkedin.svg?color=%23F4991A' },
+  { name: 'X',         imgSrc: 'https://cdn.simpleicons.org/x/F4991A' },
+  { name: 'Facebook',  imgSrc: 'https://cdn.simpleicons.org/facebook/F4991A' },
+  { name: 'Instagram', imgSrc: 'https://cdn.simpleicons.org/instagram/F4991A' },
+  { name: 'TikTok',    imgSrc: 'https://cdn.simpleicons.org/tiktok/F4991A' },
+  { name: 'YouTube',   imgSrc: 'https://cdn.simpleicons.org/youtube/F4991A' },
 ];
 
 function spacer(h = 8): string {
@@ -38,29 +51,48 @@ function linkHtml(href: string, text: string): string {
   return `<a href="${href}" style="color:${STEEL};text-decoration:underline;font-family:${FONT};font-size:14px;">${text}</a>`;
 }
 
-function socialIconCell(s: typeof SOCIAL[number], last: boolean): string {
-  return `<td style="padding:0${last ? '' : ' 6px 0 0'};">
-  <table cellpadding="0" cellspacing="0" border="0">
-    <tr>
-      <td bgcolor="#000000" style="background-color:#000000;border-radius:5px;width:30px;height:30px;text-align:center;vertical-align:middle;">
-        <a href="${s.url}" target="_blank" style="text-decoration:none;display:block;line-height:0;">
-          <img src="${s.imgSrc}" alt="${s.name}" width="18" height="18" style="display:block;border:0;margin:6px;" />
-        </a>
-      </td>
-    </tr>
-  </table>
+function socialIconCell(s: { name: string; url: string; imgSrc: string }, last: boolean): string {
+  return `<td style="padding:20px ${last ? '0' : '15px'} 0 0;vertical-align:middle;text-align:center;width:20px;height:20px;">
+  <a href="${s.url}" target="_blank" style="text-decoration:none;display:inline-block;line-height:0;">
+    <img src="${s.imgSrc}" alt="${s.name}" width="20" height="20" style="display:block;border:0;margin:0;" />
+  </a>
 </td>`;
 }
 
-export function generateSignatureHtml(data: SignatureData): string {
-  const parts: string[] = [];
-
-  if (data.intro) {
-    parts.push(textRow('--'));
-    parts.push(spacer(4));
-    parts.push(textRow(data.intro));
-    parts.push(spacer(12));
+function formatWebsiteUrl(url: string, source?: string, medium?: string, campaign?: string): string {
+  if (!url) return '';
+  try {
+    const u = new URL(url);
+    if (source) u.searchParams.set('utm_source', source);
+    if (medium) u.searchParams.set('utm_medium', medium);
+    if (campaign) u.searchParams.set('utm_campaign', campaign);
+    return u.toString();
+  } catch {
+    const separator = url.includes('?') ? '&' : '?';
+    let formatted = url;
+    const params = [];
+    if (source) params.push(`utm_source=${encodeURIComponent(source)}`);
+    if (medium) params.push(`utm_medium=${encodeURIComponent(medium)}`);
+    if (campaign) params.push(`utm_campaign=${encodeURIComponent(campaign)}`);
+    if (params.length > 0) {
+      formatted += separator + params.join('&');
+    }
+    return formatted;
   }
+}
+
+export function generateSignatureHtml(data: SignatureData, origin?: string): string {
+  const parts: string[] = [];
+  const logoUrl = origin ? `${origin}/logo-paps.png` : '/logo-paps.png';
+  const siteUrl = data.websiteUrl || SITE_URL;
+  const formattedSiteUrl = formatWebsiteUrl(siteUrl, data.utmSource, data.utmMedium, data.utmCampaign);
+  const displayDomain = siteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+
+  // Formule d'intro forcée à "Your friend,"
+  parts.push(textRow('--'));
+  parts.push(spacer(4));
+  parts.push(textRow("Your friend,"));
+  parts.push(spacer(12));
 
   if (data.fullName) {
     parts.push(
@@ -91,24 +123,61 @@ export function generateSignatureHtml(data: SignatureData): string {
   parts.push(spacer(8));
 
   parts.push(`<tr><td>
-  <a href="${SITE_URL}" target="_blank" style="text-decoration:none;">
-    <img src="${LOGO_URL}" alt="PAPS" width="240" style="display:block;border:0;" referrerpolicy="no-referrer" />
+  <a href="${formattedSiteUrl}" target="_blank" style="text-decoration:none;">
+    <img src="${logoUrl}" alt="PAPS" width="240" style="display:block;border:0;" referrerpolicy="no-referrer" />
   </a>
 </td></tr>`);
 
   parts.push(spacer(6));
 
-  parts.push(`<tr><td>${linkHtml(SITE_URL, 'www.papslogistics.com')}</td></tr>`);
+  parts.push(`<tr><td>${linkHtml(formattedSiteUrl, displayDomain)}</td></tr>`);
 
   parts.push(spacer(6));
 
-  const iconCells = SOCIAL.map((s, i) => socialIconCell(s, i === SOCIAL.length - 1)).join('');
+  const activeSocialsNames = data.activeSocials && data.activeSocials.length > 0
+    ? data.activeSocials
+    : SOCIAL_TEMPLATES.map(s => s.name);
 
-  parts.push(`<tr><td>
-  <table cellpadding="0" cellspacing="0" border="0"><tbody>
-    <tr>${iconCells}</tr>
-  </tbody></table>
-</td></tr>`);
+  const activeSocials: { name: string; url: string; imgSrc: string }[] = [];
+  
+  SOCIAL_TEMPLATES.forEach(s => {
+    if (activeSocialsNames.includes(s.name)) {
+      let customUrl = '';
+      if (s.name === 'LinkedIn') customUrl = data.linkedinUrl || 'https://www.linkedin.com/company/paps';
+      else if (s.name === 'X') customUrl = data.xUrl || 'https://x.com/papslogistics';
+      else if (s.name === 'Facebook') customUrl = data.facebookUrl || 'https://www.facebook.com/Papsapp/';
+      else if (s.name === 'Instagram') customUrl = data.instagramUrl || 'https://www.instagram.com/paps_sn';
+      else if (s.name === 'TikTok') customUrl = data.tiktokUrl || 'https://www.tiktok.com/@papslogistics';
+      else if (s.name === 'YouTube') customUrl = data.youtubeUrl || 'https://www.youtube.com/@papsapp';
+
+      if (customUrl) {
+        activeSocials.push({
+          name: s.name,
+          url: customUrl,
+          imgSrc: s.imgSrc
+        });
+      }
+    }
+  });
+
+  const iconCells = activeSocials.map((s, i) => socialIconCell(s, i === activeSocials.length - 1)).join('');
+
+  if (iconCells) {
+    parts.push(`<tr><td>
+    <table cellpadding="0" cellspacing="0" border="0"><tbody>
+      <tr>${iconCells}</tr>
+    </tbody></table>
+  </td></tr>`);
+  }
+
+  if (data.countryId) {
+    const baseApiUrl = origin || '';
+    const bannerImg = `<img src="${baseApiUrl}/api/campaign-image?country=${data.countryId}" alt="PAPS Campagne" width="480" style="display:block;border:0;width:480px;max-width:480px;" />`;
+    const bannerContent = `<a href="${baseApiUrl}/api/campaign-link?country=${data.countryId}" target="_blank" style="text-decoration:none;display:block;">${bannerImg}</a>`;
+    
+    parts.push(spacer(15));
+    parts.push(`<tr><td>${bannerContent}</td></tr>`);
+  }
 
   return `<table cellpadding="0" cellspacing="0" border="0">
   <tbody>
