@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   paps-signature:
-    build: .
+    build: https://github.com/baayfily/paps-signature.git#main
     container_name: paps-signature-app
     restart: always
     ports:
