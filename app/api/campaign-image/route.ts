@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCountriesFromCSV } from "@/lib/csvHelper";
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const countryId = searchParams.get("country");
   
   if (countryId) {
@@ -15,6 +15,15 @@ export async function GET(request: NextRequest) {
     }
   }
   
-  // Default to the 480x1 transparent PNG
-  return NextResponse.redirect(`${origin}/transparent-480x1.png`, { status: 302 });
+  // Directly serve a 1x1 transparent PNG instead of redirecting to avoid broken image issues
+  const transparentPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+  const buffer = Buffer.from(transparentPngBase64, "base64");
+
+  return new NextResponse(buffer, {
+    headers: {
+      "Content-Type": "image/png",
+      "Content-Length": buffer.length.toString(),
+      "Cache-Control": "no-store, must-revalidate"
+    }
+  });
 }
