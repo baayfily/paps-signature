@@ -5,8 +5,22 @@ services:
     build: https://github.com/baayfily/paps-signature.git#main
     container_name: paps-signature-app
     restart: always
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       # Important : monter le fichier CSV pour conserver vos modifications d'administration sur le disque hôte
       - ./public/countries.csv:/app/public/countries.csv
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.paps-signature.rule=Host(`signature.papslogistics.tech`)"
+      - "traefik.http.routers.paps-signature.entrypoints=web,websecure"
+      - "traefik.http.routers.paps-signature.tls=true"
+      - "traefik.http.routers.paps-signature.tls.certresolver=mytlschallenge"
+      - "traefik.http.middlewares.paps-signature-https.headers.SSLRedirect=true"
+      - "traefik.http.routers.paps-signature.middlewares=paps-signature-https@docker"
+      - "traefik.http.services.paps-signature.loadbalancer.server.port=3000"
+
+networks:
+  default:
+    external: true
+    name: n8n_default
